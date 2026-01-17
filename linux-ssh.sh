@@ -19,9 +19,9 @@ if [[ -z "$LINUX_USER_PASSWORD" ]]; then
 fi
 
 echo "### Install ngrok ###"
-
-wget -q https://bin.equinox.io/c/4VmDzA7iaHb/ngrok-stable-linux-386.zip
-unzip ngrok-stable-linux-386.zip
+sudo apt install tar
+wget -q https://bin.equinox.io/c/bNyj1mQVY4c/ngrok-v3-stable-linux-amd64.tgz
+tar -xf  ngrok-v3-stable-linux-amd64.tgz
 chmod +x ./ngrok
 
 echo "### Update user: $USER password ###"
