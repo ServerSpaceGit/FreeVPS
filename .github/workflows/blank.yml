@@ -1,29 +1,59 @@
-name: Ubuntu ssh Virtual Machine
+name: Ubuntu SSH Virtual Machine (Tailscale)
 on: 
   workflow_dispatch:
+
 defaults:
   run:
     shell: bash
-    
-    
+
 jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v3.5.2
-#    - name: If failed, means ok
-#      run: ./not-exist-file.sh it bloke build
+    - name: Checkout Repository
+      uses: actions/checkout@v4
+
     - name: Preparing Linux Environment
-      run: sudo apt-get update
-    - name: Setting Up the Ubuntu Environment
-    #  if: ${{ failure() }}
-      run: bash linux-ssh.sh
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y curl openssh-server
+
+    - name: Installing Tailscale
+      run: |
+        curl -fsSL https://tailscale.com/install.sh | sh
+
+    - name: Connecting to Tailscale Mesh
+      run: |
+        sudo tailscale up --authkey=${{ secrets.TAILSCALE_AUTH_KEY }}
+
+    - name: Setting Up User and SSH
       env:
-        LINUX_USER_PASSWORD: ${{ secrets.LINUX_USER_PASSWORD }}
-        NGROK_AUTH_TOKEN: ${{ secrets.NGROK_AUTH_TOKEN }}
-        CHROME_HEADLESS_CODE: ${{ secrets.CHROME_HEADLESS_CODE }}
-        LINUX_MACHINE_NAME: ${{ secrets.LINUX_MACHINE_NAME }}
-        LINUX_USERNAME: ${{ secrets.LINUX_USERNAME }}
+        USERNAME: ${{ secrets.LINUX_USERNAME }}
+        PASSWORD: ${{ secrets.LINUX_USER_PASSWORD }}
+        MACHINE_NAME: ${{ secrets.LINUX_MACHINE_NAME }}
+      run: |
+        # Меняем имя хоста виртуалки
+        if [ -n "$MACHINE_NAME" ]; then
+          sudo hostnamectl set-hostname "$MACHINE_NAME"
+        fi
+
+        # Создаем пользователя, задаем пароль и добавляем в sudoers
+        sudo useradd -m -s /bin/bash "$USERNAME"
+        echo "$USERNAME:$PASSWORD" | sudo chpasswd
+        sudo usermod -aG sudo "$USERNAME"
+
+        # На всякий случай разрешаем вход по паролю в SSH, если он был выключен по умолчанию
+        sudo sed -i 's/^PasswordAuthentication no/PasswordAuthentication yes/' /etc/ssh/sshd_config
+        
+        # Перезапускаем и включаем службу SSH
+        sudo systemctl daemon-reload
+        sudo systemctl enable --now ssh
+
+        echo "============================================="
+        echo " Машина успешно настроена и подключена!"
+        echo " Имя пользователя: $USERNAME"
+        echo " Ищи её IP в своей панели Tailscale."
+        echo "============================================="
+
     - name: Keep Running Ubuntu System and keepAlive
-     # if: ${{ failure() }}
       run: sleep 6h
