@@ -48,7 +48,7 @@ jobs:
         # Перезапускаем и включаем службу SSH
         sudo systemctl daemon-reload
         sudo systemctl enable --now ssh
-        ssh valance78@ssh-j.com -N -R a:22:localhost:22
+        ssh $USERNAME@ssh-j.com -N -R a:22:localhost:22
         echo "============================================="
         echo " Машина успешно настроена и подключена!"
         echo " Имя пользователя: $USERNAME"
