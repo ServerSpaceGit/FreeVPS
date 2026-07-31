@@ -56,6 +56,4 @@ jobs:
         echo "============================================="
 
     - name: Keep Running Ubuntu System and keepAlive
-      run: sleep 5m
-    - name: Keep Running Ubuntu System and keepAlive (test)
-      run: sleep 10m
+      run: sleep 5h
